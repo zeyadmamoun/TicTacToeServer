@@ -11,6 +11,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,8 +21,8 @@ import org.json.JSONObject;
  *
  * @author zeyad_maamoun
  */
-public class ClientHandler extends Thread{
-    
+public class ClientHandler extends Thread {
+
     private String username;
     private String password;
     private boolean isPlaying;
@@ -29,12 +30,13 @@ public class ClientHandler extends Thread{
     private DataOutputStream mouth;
     private Socket socket;
     private static Vector<ClientHandler> clients = new Vector<>();
+    private static ArrayList<String> playersList = new ArrayList<>();
 
-    public ClientHandler(Socket socket){
+    public ClientHandler(Socket socket) {
         try {
             ear = new DataInputStream(socket.getInputStream());
             mouth = new DataOutputStream(socket.getOutputStream());
-            this.socket=socket;
+            this.socket = socket;
             clients.add(this);
             start();
         } catch (IOException ex) {
@@ -53,54 +55,52 @@ public class ClientHandler extends Thread{
             }
         }
     }
-    
-    
 
-    private void parseJsonCommand(String controlMessage){
+    private void parseJsonCommand(String controlMessage) {
         JSONObject jsonMessage = new JSONObject(controlMessage);
-        switch(jsonMessage.getString("command")){
+        switch (jsonMessage.getString("command")) {
             case "register":
                 username = jsonMessage.getString("username");
                 password = jsonMessage.getString("password");
-                registerHandler(username,password);
-            break;
+                registerHandler(username, password);
+                break;
             case "login":
                 username = jsonMessage.getString("username");
                 password = jsonMessage.getString("password");
-                loginHandler(username,password);
-            break;
+                loginHandler(username, password);
+                break;
             case "requestToPlay":
                 requestToPlayHandler();
-            break;
+                break;
             case "acceptRequest":
                 acceptRequestHandler();
-            break;
+                break;
             case "refusedRequest":
                 refuseRequestHandler();
-            break;
-                
+                break;
+
         }
     }
 
-    private void registerHandler(String userName,String password) {
+    private void registerHandler(String userName, String password) {
         boolean status = false;
         JSONObject obj = new JSONObject();
         try {
             status = UsersDao.registerUser(userName, password, password);
-            if(status == true){
+            if (status == true) {
                 int score = UsersDao.getUserScore(userName);
                 obj.put("command", "register_response");
                 obj.put("status", 1);
                 obj.put("username", userName);
                 obj.put("score", 0);
                 mouth.writeUTF(obj.toString());
-           } else {
+            } else {
                 obj.put("command", "register_response");
                 obj.put("status", 0);
                 obj.put("username", userName);
                 obj.put("score", 0);
                 mouth.writeUTF(obj.toString());
-           }
+            }
         } catch (SQLException ex) {
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
@@ -108,46 +108,60 @@ public class ClientHandler extends Thread{
         }
     }
 
-    private void loginHandler(String userName,String password) {
+    private void loginHandler(String userName, String password) {
         boolean status = false;
         JSONObject obj = new JSONObject();
         try {
-           status = UsersDao.login(userName, password);
-           
-           if(status == true){
+            status = UsersDao.login(userName, password);
+
+            if (status == true) {
                 int score = UsersDao.getUserScore(userName);
                 obj.put("command", "login_response");
                 obj.put("status", 1);
                 obj.put("username", userName);
                 obj.put("score", score);
                 mouth.writeUTF(obj.toString());
-           } else {
-               obj.put("command", "login_response");
+                updatePlayerListForAll();
+            } else {
+                obj.put("command", "login_response");
                 obj.put("status", 0);
                 obj.put("username", userName);
                 obj.put("score", 0);
                 mouth.writeUTF(obj.toString());
-           }
-           
+            }
+
         } catch (SQLException ex) {
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-      
-    } 
-    
-    
-    void directMessage(String msg,String username){
-        
+
+    }
+
+    private void updatePlayerListForAll() {
+        playersList.add(this.username);
+        JSONObject obj = new JSONObject();
+        obj.put("command", "players_list");
+        obj.put("list", playersList);
+        try {
+            for (int i = 0; i < clients.size(); i++) {
+                obj.put("list", playersList);
+                clients.get(i).mouth.writeUTF(obj.toString());
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    void directMessage(String msg, String username) {
+
         JSONObject obj = new JSONObject();
         obj.put("type", "message");
         obj.put("message", msg);
         obj.put("username", username);
-        
-        for(ClientHandler c: clients){
-            if(c.username.equals(username)){
+
+        for (ClientHandler c : clients) {
+            if (c.username.equals(username)) {
                 try {
                     c.mouth.writeUTF(obj.toString());
                 } catch (IOException ex) {
@@ -156,6 +170,7 @@ public class ClientHandler extends Thread{
             }
         }
     }
+
     private void requestToPlayHandler() {
     }
 
@@ -164,7 +179,5 @@ public class ClientHandler extends Thread{
 
     private void refuseRequestHandler() {
     }
-    
-    
-    
+
 }

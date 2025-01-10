@@ -5,5 +5,11 @@
         <group name="SimpleServer/client">
             <file>file:/C:/Users/zeyad_maamoun/Desktop/AlphaServer/src/network/ClientHandler.java</file>
         </group>
+        <group>
+            <file>file:/C:/Users/mahmo/Documents/NetBeansProjects/TicTacToeServer/src/alphaserver/FXMLDocument.fxml</file>
+            <file>file:/C:/Users/mahmo/Documents/NetBeansProjects/TicTacToeServer/src/network/ClientHandler.java</file>
+            <file>file:/C:/Users/mahmo/Documents/NetBeansProjects/TicTacToeServer/src/alphaserver/AlphaServer.java</file>
+            <file>file:/C:/Users/mahmo/Documents/NetBeansProjects/TicTacToeServer/src/alphaserver/FXMLDocumentController.java</file>
+        </group>
     </open-files>
 </project-private>
