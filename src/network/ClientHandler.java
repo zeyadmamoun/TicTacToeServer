@@ -70,7 +70,7 @@ public class ClientHandler extends Thread {
                 loginHandler(username, password);
                 break;
             case "requestToPlay":
-                requestToPlayHandler();
+                requestToPlayHandler(jsonMessage);
                 break;
             case "acceptRequest":
                 acceptRequestHandler();
@@ -171,7 +171,19 @@ public class ClientHandler extends Thread {
         }
     }
 
-    private void requestToPlayHandler() {
+    private void requestToPlayHandler(JSONObject jsonMessage) {
+        String toPlayer = jsonMessage.getString("player2");
+        for (int i = 0; i < clients.size(); i++) {
+
+            if (clients.get(i).username.equals(toPlayer)) {
+                try {
+                    mouth.writeUTF(jsonMessage.toString());
+                } catch (IOException ex) {
+                    Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+
     }
 
     private void acceptRequestHandler() {
