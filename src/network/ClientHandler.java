@@ -72,13 +72,10 @@ public class ClientHandler extends Thread {
             case "requestToPlay":
                 requestToPlayHandler(jsonMessage);
                 break;
-            case "acceptRequest":
-                acceptRequestHandler();
+            case "playerResponse":
+                System.out.println(jsonMessage.toString());
+                playerResponsetHandler(jsonMessage);
                 break;
-            case "refusedRequest":
-                refuseRequestHandler();
-                break;
-
         }
     }
 
@@ -185,8 +182,20 @@ public class ClientHandler extends Thread {
         }
 
     }
+    
+    private void playerResponsetHandler(JSONObject jsonMessage) {
+        String toPlayer = jsonMessage.getString("toplayer");
+        for (int i = 0; i < clients.size(); i++) {
 
-    private void acceptRequestHandler() {
+            if (clients.get(i).username.equals(toPlayer)) {
+                try {
+                    mouth.writeUTF(jsonMessage.toString());
+                } catch (IOException ex) {
+                    Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+
     }
 
     private void refuseRequestHandler() {
