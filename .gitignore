@@ -1,0 +1,23 @@
+# NetBeans-specific directories and files
+nbproject/private/
+nbproject/Makefile-*
+nbbuild/
+dist/
+build/
+*.class
+*.jar
+*.war
+*.ear
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Generated files
+*.generated
+*.orig
+
+# OS-specific files (optional, depending on your OS)
+.DS_Store
+Thumbs.db
