@@ -94,6 +94,7 @@ public class ClientHandler extends Thread {
                 obj.put("username", userName);
                 obj.put("score", 0);
                 mouth.writeUTF(obj.toString());
+                updatePlayerListForAll();
             } else {
                 obj.put("command", "register_response");
                 obj.put("status", 0);
