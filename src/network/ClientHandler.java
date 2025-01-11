@@ -145,7 +145,7 @@ public class ClientHandler extends Thread {
         obj.put("list", playersList);
         try {
             for (int i = 0; i < clients.size(); i++) {
-                obj.put("list", playersList);
+                //obj.put("list", playersList);
                 clients.get(i).mouth.writeUTF(obj.toString());
             }
         } catch (IOException ex) {
