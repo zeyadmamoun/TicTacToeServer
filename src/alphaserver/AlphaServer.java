@@ -19,7 +19,7 @@ import javafx.stage.Stage;
 public class AlphaServer extends Application {
 
     FXMLDocumentController c;
-
+//
     @Override
     public void start(Stage stage) throws Exception {
         FXMLLoader loader = new FXMLLoader();
