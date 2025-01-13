@@ -72,13 +72,15 @@ public class ClientHandler extends Thread {
             case "requestToPlay":
                 requestToPlayHandler(jsonMessage);
                 break;
-            case "acceptRequest":
-                acceptRequestHandler();
+            case "playerResponse":
+                int response = jsonMessage.getInt("response");
+                if(response==1){
+                    playerResponseHandler();
+                }else{
+                    playerResponsetHandler(jsonMessage);
+                }
+                
                 break;
-            case "refusedRequest":
-                refuseRequestHandler();
-                break;
-
         }
     }
 
@@ -94,7 +96,6 @@ public class ClientHandler extends Thread {
                 obj.put("username", userName);
                 obj.put("score", 0);
                 mouth.writeUTF(obj.toString());
-                updatePlayerListForAll();
             } else {
                 obj.put("command", "register_response");
                 obj.put("status", 0);
@@ -187,10 +188,33 @@ public class ClientHandler extends Thread {
 
     }
 
-    private void acceptRequestHandler() {
+    private void playerResponseHandler() {
+        JSONObject obj = new JSONObject();
+        obj.put("command", "playerResponse");
+        obj.put("response", 1);
+
+        try {
+            mouth.writeUTF(obj.toString());
+        } catch (IOException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
-    private void refuseRequestHandler() {
+    private void playerResponsetHandler(JSONObject jsonMessage) {
+        String toPlayer = jsonMessage.getString("toplayer");
+        for (int i = 0; i < clients.size(); i++) {
+
+            if (clients.get(i).username.equals(toPlayer)) {
+                try {
+                    mouth.writeUTF(jsonMessage.toString());
+                } catch (IOException ex) {
+                    Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+
     }
+
+  
 
 }
