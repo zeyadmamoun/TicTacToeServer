@@ -147,7 +147,6 @@ public class ClientHandler extends Thread {
         obj.put("list", playersList);
         try {
             for (int i = 0; i < clients.size(); i++) {
-                //obj.put("list", playersList);
                 clients.get(i).mouth.writeUTF(obj.toString());
             }
         } catch (IOException ex) {
@@ -179,7 +178,8 @@ public class ClientHandler extends Thread {
 
             if (clients.get(i).username.equals(toPlayer)) {
                 try {
-                    mouth.writeUTF(jsonMessage.toString());
+                    System.out.println("******"+clients.get(i).username);
+                    clients.get(i).mouth.writeUTF(jsonMessage.toString());
                 } catch (IOException ex) {
                     Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -194,6 +194,7 @@ public class ClientHandler extends Thread {
 
             if (clients.get(i).username.equals(toPlayer)) {
                 try {
+                    //clients.get(i).mouth.writeUTF(jsonMessage.toString());
                     mouth.writeUTF(jsonMessage.toString());
                 } catch (IOException ex) {
                     Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
@@ -208,6 +209,7 @@ public class ClientHandler extends Thread {
 
             if (clients.get(i).username.equals(toPlayer)) {
                 try {
+                    //clients.get(i).mouth.writeUTF(jsonMessage.toString());
                     mouth.writeUTF(jsonMessage.toString());
                 } catch (IOException ex) {
                     Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
