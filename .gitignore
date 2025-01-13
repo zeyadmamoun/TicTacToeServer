@@ -1,23 +1,40 @@
-# NetBeans-specific directories and files
-nbproject/private/
-nbproject/Makefile-*
+# Created by https://www.toptal.com/developers/gitignore/api/netbeans,windows
+# Edit at https://www.toptal.com/developers/gitignore?templates=netbeans,windows
+
+### NetBeans ###
+**/nbproject/private/
+**/nbproject/Makefile-*.mk
+**/nbproject/Package-*.bash
+build/
 nbbuild/
 dist/
-build/
-*.class
-*.jar
-*.war
-*.ear
+nbdist/
+.nb-gradle/
 
-# Logs and temporary files
-*.log
-*.tmp
-*.bak
-
-# Generated files
-*.generated
-*.orig
-
-# OS-specific files (optional, depending on your OS)
-.DS_Store
+### Windows ###
+# Windows thumbnail cache files
 Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+
+# Dump file
+*.stackdump
+
+# Folder config file
+[Dd]esktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# End of https://www.toptal.com/developers/gitignore/api/netbeans,windows
