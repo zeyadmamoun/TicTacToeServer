@@ -75,7 +75,7 @@ public class ClientHandler extends Thread {
             case "playerResponse":
                 int response = jsonMessage.getInt("response");
                 if(response==1){
-                    playerResponseHandler();
+                    playerResponseHandler(jsonMessage);
                 }else{
                     playerResponsetHandler(jsonMessage);
                 }
@@ -188,15 +188,17 @@ public class ClientHandler extends Thread {
 
     }
 
-    private void playerResponseHandler() {
-        JSONObject obj = new JSONObject();
-        obj.put("command", "playerResponse");
-        obj.put("response", 1);
+    private void playerResponseHandler(JSONObject jsonMessage) {
+        String toPlayer = jsonMessage.getString("toplayer");
+        for (int i = 0; i < clients.size(); i++) {
 
-        try {
-            mouth.writeUTF(obj.toString());
-        } catch (IOException ex) {
-            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+            if (clients.get(i).username.equals(toPlayer)) {
+                try {
+                    mouth.writeUTF(jsonMessage.toString());
+                } catch (IOException ex) {
+                    Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
         }
     }
 
