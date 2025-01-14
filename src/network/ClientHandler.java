@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,12 +24,13 @@ import org.json.JSONObject;
  */
 public class ClientHandler extends Thread {
 
-    private String username;
+    boolean isRunning = true;
+    String username;
     private String password;
     private boolean isPlaying;
-    private DataInputStream ear;
-    private DataOutputStream mouth;
-    private Socket socket;
+    DataInputStream ear;
+    DataOutputStream mouth;
+    Socket socket;
     private static Vector<ClientHandler> clients = new Vector<>();
     private static ArrayList<String> playersList = new ArrayList<>();
 
@@ -46,10 +48,14 @@ public class ClientHandler extends Thread {
 
     @Override
     public void run() {
-        while (true) {
+        while (isRunning) {
             try {
                 String clientMsg = ear.readUTF();
-                parseJsonCommand(clientMsg);
+                if (!isPlaying) {
+                    parseJsonCommand(clientMsg);
+                }
+//                String clientMsg = ear.readUTF();
+                // parseJsonCommand(clientMsg);
             } catch (IOException ex) {
                 Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -74,12 +80,14 @@ public class ClientHandler extends Thread {
                 break;
             case "playerResponse":
                 int response = jsonMessage.getInt("response");
-                if(response==1){
+                if (response == 1) {
                     playerResponseHandler(jsonMessage);
-                }else{
+                } else {
                     playerResponsetHandler(jsonMessage);
                 }
-                
+                break;
+            case "move":
+                System.out.println("test");
                 break;
         }
     }
@@ -187,12 +195,16 @@ public class ClientHandler extends Thread {
         }
 
     }
+//accept 
 
     private void playerResponseHandler(JSONObject jsonMessage) {
+        ClientHandler player1 = null;
+        ClientHandler player2 = null;
         String toPlayer = jsonMessage.getString("toplayer");
+        String fromplayer = jsonMessage.getString("fromplayer");
         for (int i = 0; i < clients.size(); i++) {
-
             if (clients.get(i).username.equals(toPlayer)) {
+                player1 = clients.get(i);
                 try {
                     clients.get(i).mouth.writeUTF(jsonMessage.toString());
                 } catch (IOException ex) {
@@ -200,7 +212,21 @@ public class ClientHandler extends Thread {
                 }
             }
         }
+        for (int i = 0; i < clients.size(); i++) {
+            if (clients.get(i).username.equals(fromplayer)) {
+                player2 = clients.get(i);
+            }
+        }
+        if (player1 != null && player2 != null) {
+            player1.isRunning = false;
+            player2.isRunning = false;
+            player1.isPlaying = true;
+            player2.isPlaying = true;
+            new GameSession(player1, player2);
+        }
+
     }
+//reject
 
     private void playerResponsetHandler(JSONObject jsonMessage) {
         String toPlayer = jsonMessage.getString("toplayer");
@@ -214,9 +240,182 @@ public class ClientHandler extends Thread {
                 }
             }
         }
+    }
+}
 
+class GameSession extends Thread {
+
+    char currentPlayer = 'X';
+    boolean isPlayerOneTurn;
+    char[][] board = new char[3][3];
+    ClientHandler player1;
+    ClientHandler player2;
+    boolean isRunning = true;
+
+    public GameSession(ClientHandler player1, ClientHandler player2) {
+        this.player1 = player1;
+        this.player2 = player2;
+        initializeGame();
+        start();
     }
 
-  
+    @Override
+    public void run() {
+        try {
+            JSONObject obj;
+            // Initial notification to both players
+            JSONObject startObj = new JSONObject();
+            startObj.put("command", "start");
+            player1.mouth.writeUTF(startObj.toString());
+            while (isRunning) {
+                // Handle game messages from both players
+                if (player1.ear.available() > 0) {
+                    String move = player1.ear.readUTF();
+                    obj = new JSONObject(move);
+                    int col = obj.getInt("col");
+                    int row = obj.getInt("row");
+                    board[row][col] = currentPlayer;
+                    player2.mouth.writeUTF(move);
+                    if (checkWinner()) {
+                        if (currentPlayer == 'X') {
+                            notifyPlayersSomeoneWon(player1, player2);
+                            System.out.println("server says X won");
+                        } else {
+                            notifyPlayersSomeoneWon(player2, player1);
+                            System.out.println("server says O won");
+                            break;
+                        }
+                    } else if (isBoardFull()) {
+                        notifyPlayersDraw();
+                        System.out.println("server says board full");
+                        break;
+                    }
+                    isPlayerOneTurn = !isPlayerOneTurn;
+                    currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
+                    for (int i = 0; i < 3; i++) {
+                        for (int j = 0; j < 3; j++) {
+                            if(board[i][j]!=' '){
+                                System.out.println(board[i][j]);
+                            }else{
+                                System.out.println("-");
+                            }
+                        }
+                    }
+                    System.out.println("============");
+                }
 
+                if (player2.ear.available() > 0) {
+                    String move = player2.ear.readUTF();
+
+                    obj = new JSONObject(move);
+                    int col = obj.getInt("col");
+                    int row = obj.getInt("row");
+
+                    board[row][col] = currentPlayer;
+                    player1.mouth.writeUTF(move);
+
+                    if (checkWinner()) {
+                        if (currentPlayer == 'X') {
+                            notifyPlayersSomeoneWon(player1, player2);
+                            System.out.println("server says X won");
+                        } else {
+                            notifyPlayersSomeoneWon(player2, player1);
+                            System.out.println("server says O won");
+                            break;
+                        }
+                    } else if (isBoardFull()) {
+                        notifyPlayersDraw();
+                        System.out.println("server says board full");
+                        break;
+                    }
+                    isPlayerOneTurn = !isPlayerOneTurn;
+                    currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
+                    for (int i = 0; i < 3; i++) {
+                        for (int j = 0; j < 3; j++) {
+                            if(board[i][j]!=' '){
+                                System.out.println(board[i][j]);
+                            }else{
+                                System.out.println("-");
+                            }
+                        }
+                    }
+                    System.out.println("============");
+                }
+
+                Thread.sleep(50); // Small delay to prevent CPU overuse
+            }
+
+        } catch (IOException | InterruptedException ex) {
+            Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            // Reset game state when session ends
+
+            isRunning = false;
+        }
+    }
+
+    public final void initializeGame() {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                board[i][j] = ' ';
+            }
+        }
+    }
+
+    public boolean checkWinner() {
+        // Check rows and columns
+        for (int i = 0; i < 3; i++) {
+            if (board[i][0] == currentPlayer && board[i][1] == currentPlayer && board[i][2] == currentPlayer) {
+                return true;
+            }
+            if (board[0][i] == currentPlayer && board[1][i] == currentPlayer && board[2][i] == currentPlayer) {
+                return true;
+            }
+        }
+        // after checking rows and columns we check the diagonal.
+        if (board[0][0] == currentPlayer && board[1][1] == currentPlayer && board[2][2] == currentPlayer) {
+            return true;
+        }
+        if (board[0][2] == currentPlayer && board[1][1] == currentPlayer && board[2][0] == currentPlayer) {
+            return true;
+        }
+        return false;
+    }
+
+    void notifyPlayersSomeoneWon(ClientHandler winner, ClientHandler loser) {
+        JSONObject obj = new JSONObject();
+        obj.put("command", "win");
+        obj.put("winner", winner.username);
+        obj.put("loser", loser.username);
+        try {
+            player1.mouth.writeUTF(obj.toString());
+            player2.mouth.writeUTF(obj.toString());
+        } catch (IOException ex) {
+            Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    void notifyPlayersDraw() {
+        JSONObject obj = new JSONObject();
+        obj.put("command", "draw");
+        obj.put("player1", player1.username);
+        obj.put("player2", player2.username);
+        try {
+            player1.mouth.writeUTF(obj.toString());
+            player2.mouth.writeUTF(obj.toString());
+        } catch (IOException ex) {
+            Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public final boolean isBoardFull() {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (board[i][j] == ' ') {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 }
