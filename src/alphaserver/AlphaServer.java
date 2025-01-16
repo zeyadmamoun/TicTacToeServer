@@ -6,6 +6,7 @@
 package alphaserver;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -13,18 +14,27 @@ import javafx.stage.Stage;
 
 /**
  *
- * @author zeyad_maamoun
+ * @author zeyad_maamouna
  */
 public class AlphaServer extends Application {
-    
+
+    FXMLDocumentController c;
+
     @Override
     public void start(Stage stage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("FXMLDocument.fxml"));
-        
+        FXMLLoader loader = new FXMLLoader();
+        Parent root = loader.load(getClass().getResourceAsStream("FXMLDocument.fxml"));
+        c = loader.getController();
         Scene scene = new Scene(root);
-        
+
         stage.setScene(scene);
         stage.show();
+        stage.setOnCloseRequest(event -> {
+
+            c.isAcceptingClients = false;
+            Platform.exit();
+            System.exit(0);
+        });
     }
 
     /**
@@ -33,5 +43,5 @@ public class AlphaServer extends Application {
     public static void main(String[] args) {
         launch(args);
     }
-    
+
 }

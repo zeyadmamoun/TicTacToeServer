@@ -27,7 +27,7 @@ public class FXMLDocumentController implements Initializable {
     Server server;
     boolean isRunning = false;
     boolean isFirstRun = true;
-    
+    boolean isAcceptingClients=true;
     @FXML
     private Button button;
     
@@ -67,7 +67,7 @@ public class FXMLDocumentController implements Initializable {
 
         @Override
         public void run() {
-            while(true)
+            while(isAcceptingClients)
             {     
                 try {
                     Socket s = serverSocket.accept();
