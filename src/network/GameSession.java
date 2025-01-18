@@ -37,29 +37,42 @@ class GameSession extends Thread {
             JSONObject obj;
 
             Thread.sleep(100);
-            JSONObject startObj = new JSONObject();
-            startObj.put("command", "start");
-            player1.mouth.writeUTF(startObj.toString());
+            
+            notifyPlayersInfo(player1,player2);
             //player2.mouth.writeUTF(startObj.toString());
-
             while (isRunning) {
                 // Handle game messages from both players
                 if (player1.ear.available() > 0) {
                     String move = player1.ear.readUTF();
                     handlePlayerMove(move, player1, player2);
                 }
-
                 if (player2.ear.available() > 0) {
                     String move = player2.ear.readUTF();
                     handlePlayerMove(move, player2, player1);
                 }
-
             }
         } catch (IOException | InterruptedException ex) {
             Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
+    private void notifyPlayersInfo(ClientHandler player1,ClientHandler player2){
+        try {
+            JSONObject startObj = new JSONObject();
+            startObj.put("command", "start");
+            startObj.put("playerturn", player1.username);
+            startObj.put("playeronename", player1.username);
+            startObj.put("playertwoname", player2.username);
+            startObj.put("playeronescore", UsersDao.getUserScore(player1.username));
+            startObj.put("playertwoscore", UsersDao.getUserScore(player2.username));
+            player1.mouth.writeUTF(startObj.toString());
+            player2.mouth.writeUTF(startObj.toString());
+        } catch (IOException ex) {
+            Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SQLException ex) {
+            Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
     private void handlePlayerMove(String move, ClientHandler currentPlayer, ClientHandler otherPlayer) throws IOException {
         JSONObject obj = new JSONObject(move);
         if (obj.getString("command").equals("move")) {

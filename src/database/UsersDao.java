@@ -106,10 +106,7 @@ public class UsersDao {
     public static void updateScore(String username, int score) throws SQLException {
         int oldScore = getUserScore(username);
         int newScore = oldScore+score;
-        
-        System.out.println("update player score func"+newScore);
         DriverManager.registerDriver(new ClientDriver());
-
         Connection connection = DriverManager.getConnection(url, username_db, password_db);
         try (PreparedStatement ps = connection.prepareCall("UPDATE Users SET score = ? WHERE USERNAME = ?", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
             ps.setInt(1, newScore);
