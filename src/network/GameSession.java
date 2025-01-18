@@ -32,8 +32,6 @@ class GameSession extends Thread {
     @Override
     public void run() {
         try {
-            JSONObject obj;
-
             Thread.sleep(100);
             JSONObject startObj = new JSONObject();
             startObj.put("command", "start");
@@ -41,15 +39,15 @@ class GameSession extends Thread {
             //player2.mouth.writeUTF(startObj.toString());
 
             while (isRunning) {
-                // Handle game messages from both players
+
                 if (player1.ear.available() > 0) {
-                    String move = player1.ear.readUTF();
-                    handlePlayerMove(move, player1, player2);
+                    String msg = player1.ear.readUTF();
+                    handlePlayerMessage(msg, player1, player2);
                 }
 
                 if (player2.ear.available() > 0) {
-                    String move = player2.ear.readUTF();
-                    handlePlayerMove(move, player2, player1);
+                    String msg = player2.ear.readUTF();
+                    handlePlayerMessage(msg, player2, player1);
                 }
 
             }
@@ -58,36 +56,37 @@ class GameSession extends Thread {
         }
     }
 
-    private void handlePlayerMove(String move, ClientHandler currentPlayer, ClientHandler otherPlayer) throws IOException {
-        JSONObject obj = new JSONObject(move);
-        if (obj.getString("command").equals("move")) {
+    private void handlePlayerMessage(String msg, ClientHandler currentPlayer, ClientHandler otherPlayer) throws IOException {
+        JSONObject obj = new JSONObject(msg);
+        if (obj.getString("command").equals("exit_game")) {
+            endGame();
+        } else if (obj.getString("command").equals("move")) {
             int col = obj.getInt("col");
             int row = obj.getInt("row");
             char playerSymbol = currentPlayer == player1 ? 'X' : 'O';
             board[row][col] = playerSymbol;
-           // otherPlayer.mouth.writeUTF(move);
+            // otherPlayer.mouth.writeUTF(move);
 
             // Update currentSymbol to the symbol we just placed
             currentSymbol = playerSymbol;
 
             if (checkWinner()) {
-                otherPlayer.mouth.writeUTF(move);
+                otherPlayer.mouth.writeUTF(msg);
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException ex) {
                     Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 notifyPlayersSomeoneWon(currentPlayer, otherPlayer);
-                isRunning = false;
+                endGame();
                 return;
             } else if (isBoardFull()) {
                 notifyPlayersDraw();
-                isRunning = false;
+                endGame();
                 return;
             }
-            otherPlayer.mouth.writeUTF(move);
+            otherPlayer.mouth.writeUTF(msg);
         }
-
     }
 
     public final void initializeGame() {
@@ -153,5 +152,20 @@ class GameSession extends Thread {
             }
         }
         return true;
+    }
+
+    // In GameSession.java
+    private void endGame() {
+        try {
+            JSONObject msg = new JSONObject();
+            msg.put("command", "exit_game");
+            isRunning = false;
+            player1.isPlaying = false;
+            player2.isPlaying = false;
+            player1.mouth.writeUTF(msg.toString());
+            player2.mouth.writeUTF(msg.toString());
+        } catch (IOException ex) {
+            Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }
