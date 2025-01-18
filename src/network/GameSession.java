@@ -5,7 +5,9 @@
  */
 package network;
 
+import database.UsersDao;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.json.JSONObject;
@@ -78,6 +80,7 @@ class GameSession extends Thread {
                     Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 notifyPlayersSomeoneWon(currentPlayer, otherPlayer);
+                updatePlayerScore(currentPlayer.username);
                 isRunning = false;
                 return;
             } else if (isBoardFull()) {
@@ -130,7 +133,13 @@ class GameSession extends Thread {
             Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
+    private void updatePlayerScore(String userName){
+        try {
+            UsersDao.updateScore(userName,20);
+        } catch (SQLException ex) {
+            Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
     void notifyPlayersDraw() {
         JSONObject obj = new JSONObject();
         obj.put("command", "draw");

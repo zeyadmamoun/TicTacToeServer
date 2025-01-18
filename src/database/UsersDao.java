@@ -17,7 +17,8 @@ import org.apache.derby.jdbc.ClientDriver;
  * @author zeyad_maamoun
  */
 public class UsersDao {
-     private static String url = "jdbc:derby://localhost:1527/users";
+
+    private static String url = "jdbc:derby://localhost:1527/users";
     private static String username_db = "root";
     private static String password_db = "root";
 
@@ -35,7 +36,6 @@ public class UsersDao {
         return isUserExist;
     }
 
-
     public static boolean registerUser(String userName, String password, String confirmPassword) throws SQLException {
         if (!password.equals(confirmPassword)) {
             return false;
@@ -48,7 +48,7 @@ public class UsersDao {
         DriverManager.deregisterDriver(new ClientDriver());
 
         try (Connection connection = DriverManager.getConnection(url, username_db, password_db);
-            PreparedStatement pst = connection.prepareStatement("INSERT INTO USERS (USERNAME, PASSWORD) VALUES (?, ?)")) {
+                PreparedStatement pst = connection.prepareStatement("INSERT INTO USERS (USERNAME, PASSWORD) VALUES (?, ?)")) {
             pst.setString(1, userName);
             pst.setString(2, password);
             int rowsInserted = pst.executeUpdate();
@@ -82,7 +82,7 @@ public class UsersDao {
 
         return checkerData;
     }
-    
+
     public static int getUserScore(String username) throws SQLException {
         int score = 0;
         DriverManager.registerDriver(new ClientDriver());
@@ -97,9 +97,26 @@ public class UsersDao {
             if (username.equals(userNameDb)) {
                 score = resultSet.getInt("SCORE");
                 break;
-            } 
+            }
         }
 
         return score;
+    }
+
+    public static void updateScore(String username, int score) throws SQLException {
+        int oldScore = getUserScore(username);
+        int newScore = oldScore+score;
+        
+        System.out.println("update player score func"+newScore);
+        DriverManager.registerDriver(new ClientDriver());
+
+        Connection connection = DriverManager.getConnection(url, username_db, password_db);
+        try (PreparedStatement ps = connection.prepareCall("UPDATE Users SET score = ? WHERE USERNAME = ?", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
+            ps.setInt(1, newScore);
+            ps.setString(2, username);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new SQLException("Failed to update score for user: " + username, e);
+        }
     }
 }
