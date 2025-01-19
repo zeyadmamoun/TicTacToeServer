@@ -51,63 +51,38 @@ public class UsersDao {
         }
     }
 
-     public static boolean login(String checkUserName, String checkPassWord) throws SQLException {
+    
+    
+    public static boolean login(String checkUserName, String checkPassWord) throws SQLException {
         boolean checkerData = false;
 
         DriverManager.registerDriver(new ClientDriver());
-
         Connection connection = DriverManager.getConnection(url, username_db, password_db);
-        PreparedStatement ps = connection.prepareStatement("SELECT * FROM USERS WHERE USERNAME = ? AND PASSWORD = ?", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        PreparedStatement ps = connection.prepareStatement(
+                "SELECT * FROM USERS WHERE USERNAME = ? AND PASSWORD = ?",
+                ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY
+        );
 
         ps.setString(1, checkUserName);
         ps.setString(2, checkPassWord);
 
         ResultSet resultSet = ps.executeQuery();
 
-        while (resultSet.next()) {
-            String userNameDb = resultSet.getString("USERNAME");
-            String passWordDb = resultSet.getString("PASSWORD");
-            if (checkUserName.equals(userNameDb) && checkPassWord.equals(passWordDb)) {
-                checkerData = true;
-                break;
-            } else {
-                checkerData = false;
-            }
+        if (resultSet.next()) {
+            // Update the login status to true
+            PreparedStatement updateStatus = connection.prepareStatement("UPDATE USERS SET IS_LOGGED_IN = TRUE WHERE USERNAME = ?");
+            updateStatus.setString(1, checkUserName);
+            updateStatus.executeUpdate();
+            updateStatus.close();
+            checkerData = true;
+            System.out.println("Login status updated to TRUE for user: " + checkUserName);
+
         }
 
+        ps.close();
+        connection.close();
         return checkerData;
     }
-    
-//    public static boolean login(String checkUserName, String checkPassWord) throws SQLException {
-//        boolean checkerData = false;
-//
-//        DriverManager.registerDriver(new ClientDriver());
-//        Connection connection = DriverManager.getConnection(url, username_db, password_db);
-//        PreparedStatement ps = connection.prepareStatement(
-//                "SELECT * FROM USERS WHERE USERNAME = ? AND PASSWORD = ?",
-//                ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY
-//        );
-//
-//        ps.setString(1, checkUserName);
-//        ps.setString(2, checkPassWord);
-//
-//        ResultSet resultSet = ps.executeQuery();
-//
-//        if (resultSet.next()) {
-//            // Update the login status to true
-//            PreparedStatement updateStatus = connection.prepareStatement("UPDATE USERS SET IS_LOGGED_IN = TRUE WHERE USERNAME = ?");
-//            updateStatus.setString(1, checkUserName);
-//            updateStatus.executeUpdate();
-//            updateStatus.close();
-//            checkerData = true;
-//            System.out.println("Login status updated to TRUE for user: " + checkUserName);
-//
-//        }
-//
-//        ps.close();
-//        connection.close();
-//        return checkerData;
-//    }
 
     public static int getUserScore(String username) throws SQLException {
         int score = 0;
