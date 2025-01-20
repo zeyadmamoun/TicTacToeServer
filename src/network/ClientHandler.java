@@ -25,6 +25,7 @@ public class ClientHandler extends Thread {
 
     boolean isRunning = true;
     String username;
+    int score;
     private String password;
     public boolean isPlaying = false;
     DataInputStream ear;
@@ -79,6 +80,9 @@ public class ClientHandler extends Thread {
                 break;
             case "send_list":
                 updatePlayerListForAll();
+                break;
+            case "send_player_score":
+                updatePlayerScore();
                 break;
             case "playerResponse":
                 int response = jsonMessage.getInt("response");
@@ -155,17 +159,34 @@ public class ClientHandler extends Thread {
         playersList.clear();
         try {
             for (int i = 0; i < clients.size(); i++) {
-                if(clients.get(i).isPlaying == false){
+                if (clients.get(i).isPlaying == false) {
                     playersList.add(clients.get(i).username);
-                }       
+                }
             }
             obj.put("list", playersList);
-            for(ClientHandler client: clients){
+            for (ClientHandler client : clients) {
                 client.mouth.writeUTF(obj.toString());
             }
         } catch (IOException ex) {
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    private void updatePlayerScore() {
+        try {
+            score=UsersDao.getUserScore(username);
+        } catch (SQLException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        JSONObject obj = new JSONObject();
+        obj.put("command", "players_score");
+        obj.put("score", score);
+        try {
+            mouth.writeUTF(obj.toString());
+        } catch (IOException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
+            
+        
     }
 
     void directMessage(String msg, String username) {

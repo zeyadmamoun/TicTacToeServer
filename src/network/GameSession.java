@@ -23,7 +23,8 @@ class GameSession extends Thread {
     ClientHandler player1;
     ClientHandler player2;
     boolean isRunning = true;
-
+    private static int WinnnerScore=20;
+    private static int DrawScore=5;
     public GameSession(ClientHandler player1, ClientHandler player2) {
         this.player1 = player1;
         this.player2 = player2;
@@ -69,7 +70,7 @@ class GameSession extends Thread {
             currentSymbol = playerSymbol;
             
             if (checkWinner()) {
-                //updatePlayerScore(currentPlayer.username);
+                updatePlayerScore(currentPlayer.username);
                 otherPlayer.mouth.writeUTF(msg);
                 try {
                     Thread.sleep(50);
@@ -80,6 +81,7 @@ class GameSession extends Thread {
                 endGame();
                 return;
             } else if (isBoardFull()) {
+                updatePlayerScore(player1.username,player2.username);
                 otherPlayer.mouth.writeUTF(msg);
                 try {
                     Thread.sleep(50);
@@ -157,7 +159,15 @@ class GameSession extends Thread {
     }
     private void updatePlayerScore(String userName){
         try {
-            UsersDao.updateScore(userName,20);
+            UsersDao.updateScore(userName,WinnnerScore);
+        } catch (SQLException ex) {
+            Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    private void updatePlayerScore(String player1,String player2){
+        try {
+            UsersDao.updateScore(player1,DrawScore);
+            UsersDao.updateScore(player2,DrawScore);
         } catch (SQLException ex) {
             Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
         }
