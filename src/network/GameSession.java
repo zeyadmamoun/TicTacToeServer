@@ -67,9 +67,9 @@ class GameSession extends Thread {
 
             // Update currentSymbol to the symbol we just placed
             currentSymbol = playerSymbol;
-
+            
             if (checkWinner()) {
-                updatePlayerScore(currentPlayer.username);
+                //updatePlayerScore(currentPlayer.username);
                 otherPlayer.mouth.writeUTF(msg);
                 try {
                     Thread.sleep(50);
@@ -80,6 +80,12 @@ class GameSession extends Thread {
                 endGame();
                 return;
             } else if (isBoardFull()) {
+                otherPlayer.mouth.writeUTF(msg);
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 notifyPlayersDraw();
                 endGame();
                 return;
@@ -157,6 +163,7 @@ class GameSession extends Thread {
         }
     }
     void notifyPlayersDraw() {
+        System.out.println("draw from server");
         JSONObject obj = new JSONObject();
         obj.put("command", "draw");
         obj.put("player1", player1.username);

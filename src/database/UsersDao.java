@@ -51,8 +51,6 @@ public class UsersDao {
         }
     }
 
-    
-    
     public static boolean login(String checkUserName, String checkPassWord) throws SQLException {
         boolean checkerData = false;
 
@@ -104,17 +102,15 @@ public class UsersDao {
         return score;
     }
 
-    public static void updateScore(String username, int additionalScore) throws SQLException {
-        System.out.println("update score");
+    public static void updateScore(String username, int score) throws SQLException {
         DriverManager.registerDriver(new ClientDriver());
-        Connection connection = DriverManager.getConnection(url, username_db, password_db);
 
+        Connection connection = DriverManager.getConnection(url, username_db, password_db);
         PreparedStatement ps = connection.prepareStatement("UPDATE Users SET score = score + ? WHERE USERNAME = ?");
-        
-        ps.setInt(1, additionalScore);
+        ps.setInt(1, score);
         ps.setString(2, username);
         ps.executeUpdate();
+        ps.close();
 
     }
-
 }
