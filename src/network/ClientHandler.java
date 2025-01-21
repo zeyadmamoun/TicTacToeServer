@@ -108,7 +108,14 @@ public class ClientHandler extends Thread {
                 System.out.println("Client want to leave");
                 break;
 
-            case "I'm_gone": //by mohamed
+            case "I'm_gone": {
+            try {
+                //by mohamed
+                UsersDao.logout(username);
+            } catch (SQLException ex) {
+                Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
                 isClientLeft = true;
                 System.out.println("Client left the game");
                 break;
