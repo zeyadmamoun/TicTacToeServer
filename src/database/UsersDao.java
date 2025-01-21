@@ -76,7 +76,7 @@ public class UsersDao {
         PreparedStatement ps = null;
         try {
             conn = getConnection();
-            ps = conn.prepareStatement("INSERT INTO USERS (USERNAME, PASSWORD, SCORE) VALUES (?, ?, 0)");
+            ps = conn.prepareStatement("INSERT INTO USERS (USERNAME, PASSWORD, SCORE,IS_LOGGED_IN) VALUES (?, ?, 0,true)");
             ps.setString(1, userName);
             ps.setString(2, password);
             return ps.executeUpdate() > 0;
