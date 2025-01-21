@@ -35,6 +35,7 @@ public class ClientHandler extends Thread {
     Socket socket;
     private static Vector<ClientHandler> clients = new Vector<>();
     private static ArrayList<String> playersList = new ArrayList<>();
+    private boolean isClientLeft = false;
 
     public ClientHandler(Socket socket) {
         try {
@@ -51,6 +52,11 @@ public class ClientHandler extends Thread {
     @Override
     public void run() {
         while (true) {
+            if (isClientLeft) {//by mohamed
+                closingWithClient();
+                break;
+
+            }
             try {
                 if (!isPlaying && ear.available() > 0) {
                     String clientMsg = ear.readUTF();
@@ -96,6 +102,15 @@ public class ClientHandler extends Thread {
                 break;
             case "move":
                 System.out.println("test");
+                break;
+            case "closetoleave": //by mohamed
+                playerWantToClose();
+                System.out.println("Client want to leave");
+                break;
+
+            case "I'm_gone": //by mohamed
+                isClientLeft = true;
+                System.out.println("Client left the game");
                 break;
         }
     }
@@ -282,5 +297,33 @@ public class ClientHandler extends Thread {
                 }
             }
         }
+    }
+    //closing
+
+    private void playerWantToClose() { //by mohamed
+
+        JSONObject responeToClient = new JSONObject();
+        responeToClient.put("command", "acceptclosing");
+        playersList.remove(this.username);
+        clients.remove(this);
+        updatePlayerListForAll();
+        try {
+            mouth.writeUTF(responeToClient.toString());
+
+        } catch (IOException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
+
+    private void closingWithClient() { //by mohamed
+        try {
+            mouth.close();
+            ear.close();
+            socket.close();
+        } catch (IOException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
     }
 }
