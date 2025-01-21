@@ -5,6 +5,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.derby.jdbc.ClientDriver;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -155,7 +157,62 @@ public class UsersDao {
             closeResources(conn, ps, rs);
         }
     }
-
+    public static Map<String, Integer> getUserScores() throws SQLException {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        Map<String, Integer> map = new HashMap<>();
+        try {
+            conn = getConnection();
+            ps = conn.prepareStatement("SELECT USERNAME , SCORE FROM USERS");
+            rs = ps.executeQuery();
+            while(rs.next()) {
+                //System.out.println(rs.getInt("SCORE"));
+                map.put(rs.getString("USERNAME"), rs.getInt("SCORE"));
+            }
+            return map;
+        } finally {
+            closeResources(conn, ps, rs);
+        }
+    }
+    
+    public static boolean logout(String userName) throws SQLException {
+    Connection conn = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    
+    try {
+        conn = getConnection();
+        ps = conn.prepareStatement(
+            "SELECT IS_LOGGED_IN FROM USERS WHERE USERNAME = ?",
+            ResultSet.TYPE_SCROLL_INSENSITIVE,
+            ResultSet.CONCUR_READ_ONLY
+        );
+        ps.setString(1, userName);
+        rs = ps.executeQuery();
+        
+        if (!rs.next() || !rs.getBoolean("IS_LOGGED_IN")) {
+            LOGGER.warning("Logout failed - user not found or not logged in: " + userName);
+            return false;
+        }
+        
+        rs.close();
+        ps.close();
+        
+        ps = conn.prepareStatement("UPDATE USERS SET IS_LOGGED_IN = FALSE WHERE USERNAME = ?");
+        ps.setString(1, userName);
+        int rowsAffected = ps.executeUpdate();
+        
+        if (rowsAffected > 0) {
+            LOGGER.info("Logout successful for user: " + userName);
+            return true;
+        }
+        return false;
+    } finally {
+        closeResources(conn, ps, rs);
+    }
+}
+    
     public static void updateScore(String username, int scoreIncrement) throws SQLException {
         Connection conn = null;
         PreparedStatement ps = null;
@@ -182,7 +239,7 @@ public class UsersDao {
             
             if (rs.next()) {
                 int newScore = rs.getInt("SCORE");
-                LOGGER.info("Score updated for user " + username + ": " + newScore);
+                LOGGER.log(Level.INFO, "Score updated for user {0}: {1}", new Object[]{username, newScore});
             }
         } finally {
             if (verifyPs != null) verifyPs.close();

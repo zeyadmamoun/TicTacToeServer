@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -154,16 +156,31 @@ public class ClientHandler extends Thread {
     }
 
     private void updatePlayerListForAll() {
+        Map<String, Integer> newplayerListMap = new HashMap<>();
+        Map<String, Integer> playerListMap = new HashMap<>();
+        try {
+            playerListMap = UsersDao.getUserScores();
+        } catch (SQLException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
         JSONObject obj = new JSONObject();
         obj.put("command", "players_list");
         playersList.clear();
         try {
             for (int i = 0; i < clients.size(); i++) {
                 if (clients.get(i).isPlaying == false) {
-                    playersList.add(clients.get(i).username);
+                    //playersList.add(clients.get(i).username);
+                    for (Map.Entry<String, Integer> me : playerListMap.entrySet()) {
+
+                        // Printing keys
+                        if (clients.get(i).username.equals(me.getKey())) {
+                            newplayerListMap.put(me.getKey(), me.getValue());
+                        }
+
+                    }
                 }
             }
-            obj.put("list", playersList);
+            obj.put("list", newplayerListMap);
             for (ClientHandler client : clients) {
                 client.mouth.writeUTF(obj.toString());
             }
@@ -171,9 +188,10 @@ public class ClientHandler extends Thread {
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+
     private void updatePlayerScore() {
         try {
-            score=UsersDao.getUserScore(username);
+            score = UsersDao.getUserScore(username);
         } catch (SQLException ex) {
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -185,8 +203,7 @@ public class ClientHandler extends Thread {
         } catch (IOException ex) {
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
-            
-        
+
     }
 
     void directMessage(String msg, String username) {
