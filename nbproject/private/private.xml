@@ -3,12 +3,16 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group name="SimpleServer/client">
-            <file>file:/C:/Users/zeyad_maamoun/Desktop/TicTacToeServer/src/network/ClientHandler.java</file>
+            <file>file:/C:/Users/zeyad_maamoun/Desktop/latestversion/TicTacToeServer/src/network/ClientHandler.java</file>
+            <file>file:/C:/Users/zeyad_maamoun/Desktop/latestversion/TicTacToeServer/src/network/GameSession.java</file>
         </group>
         <group>
-            <file>file:/C:/Users/mahmo/Downloads/netbeans/TicTacToeServer/src/network/ClientHandler.java</file>
-            <file>file:/C:/Users/mahmo/Downloads/netbeans/TicTacToeServer/src/network/GameSession.java</file>
-            <file>file:/C:/Users/mahmo/Downloads/netbeans/TicTacToeServer/src/alphaserver/AlphaServer.java</file>
+            <file>file:/C:/Users/mahmo/OneDrive/Documents/NetBeansProjects/TicTacToeServer/src/network/ClientHandler.java</file>
+            <file>file:/C:/Users/mahmo/OneDrive/Documents/NetBeansProjects/TicTacToeServer/src/alphaserver/FXMLDocumentController.java</file>
+            <file>file:/C:/Users/mahmo/OneDrive/Documents/NetBeansProjects/TicTacToeServer/src/alphaserver/AlphaServer.java</file>
+            <file>file:/C:/Users/mahmo/OneDrive/Documents/NetBeansProjects/TicTacToeServer/src/network/GameSession.java</file>
+            <file>file:/C:/Users/mahmo/OneDrive/Documents/NetBeansProjects/TicTacToeServer/src/database/UsersDao.java</file>
+            <file>file:/C:/Users/mahmo/OneDrive/Documents/NetBeansProjects/TicTacToeServer/src/alphaserver/FXMLDocument.fxml</file>
         </group>
     </open-files>
 </project-private>

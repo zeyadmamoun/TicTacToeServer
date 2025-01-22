@@ -5,7 +5,9 @@
  */
 package network;
 
+import database.UsersDao;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.json.JSONObject;
@@ -21,6 +23,8 @@ class GameSession extends Thread {
     ClientHandler player1;
     ClientHandler player2;
     boolean isRunning = true;
+    private static int WinnnerScore = 20;
+    private static int DrawScore = 5;
 
     public GameSession(ClientHandler player1, ClientHandler player2) {
         this.player1 = player1;
@@ -32,62 +36,85 @@ class GameSession extends Thread {
     @Override
     public void run() {
         try {
-            JSONObject obj;
-
             Thread.sleep(100);
-            JSONObject startObj = new JSONObject();
-            startObj.put("command", "start");
-            player1.mouth.writeUTF(startObj.toString());
+
+            notifyPlayersInfo(player1, player2);
             //player2.mouth.writeUTF(startObj.toString());
-
             while (isRunning) {
-                // Handle game messages from both players
+
                 if (player1.ear.available() > 0) {
-                    String move = player1.ear.readUTF();
-                    handlePlayerMove(move, player1, player2);
+                    String msg = player1.ear.readUTF();
+                    handlePlayerMessage(msg, player1, player2);
                 }
-
                 if (player2.ear.available() > 0) {
-                    String move = player2.ear.readUTF();
-                    handlePlayerMove(move, player2, player1);
+                    String msg = player2.ear.readUTF();
+                    handlePlayerMessage(msg, player2, player1);
                 }
-
             }
         } catch (IOException | InterruptedException ex) {
             Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    private void handlePlayerMove(String move, ClientHandler currentPlayer, ClientHandler otherPlayer) throws IOException {
-        JSONObject obj = new JSONObject(move);
-        if (obj.getString("command").equals("move")) {
+    private void handlePlayerMessage(String msg, ClientHandler currentPlayer, ClientHandler otherPlayer) throws IOException {
+        JSONObject obj = new JSONObject(msg);
+        if (obj.getString("command").equals("exit_game")) {
+            endGame();
+        } else if (obj.getString("command").equals("closetoleave")) {
+            endGame();
+        } else if (obj.getString("command").equals("move")) {
             int col = obj.getInt("col");
             int row = obj.getInt("row");
             char playerSymbol = currentPlayer == player1 ? 'X' : 'O';
             board[row][col] = playerSymbol;
-           // otherPlayer.mouth.writeUTF(move);
+            // otherPlayer.mouth.writeUTF(move);
 
             // Update currentSymbol to the symbol we just placed
             currentSymbol = playerSymbol;
 
             if (checkWinner()) {
-                otherPlayer.mouth.writeUTF(move);
+                updatePlayerScore(currentPlayer.username);
+                otherPlayer.mouth.writeUTF(msg);
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException ex) {
                     Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 notifyPlayersSomeoneWon(currentPlayer, otherPlayer);
-                isRunning = false;
+                endGame();
                 return;
             } else if (isBoardFull()) {
+                updatePlayerScore(player1.username, player2.username);
+                otherPlayer.mouth.writeUTF(msg);
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 notifyPlayersDraw();
-                isRunning = false;
+                endGame();
                 return;
             }
-            otherPlayer.mouth.writeUTF(move);
+            otherPlayer.mouth.writeUTF(msg);
         }
+    }
 
+    private void notifyPlayersInfo(ClientHandler player1, ClientHandler player2) {
+        try {
+            JSONObject startObj = new JSONObject();
+            startObj.put("command", "start");
+            startObj.put("playerturn", player1.username);
+            startObj.put("playeronename", player1.username);
+            startObj.put("playertwoname", player2.username);
+            startObj.put("playeronescore", UsersDao.getUserScore(player1.username));
+            startObj.put("playertwoscore", UsersDao.getUserScore(player2.username));
+            player1.mouth.writeUTF(startObj.toString());
+            player2.mouth.writeUTF(startObj.toString());
+        } catch (IOException ex) {
+            Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SQLException ex) {
+            Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     public final void initializeGame() {
@@ -131,7 +158,25 @@ class GameSession extends Thread {
         }
     }
 
+    private void updatePlayerScore(String userName) {
+        try {
+            UsersDao.updateScore(userName, WinnnerScore);
+        } catch (SQLException ex) {
+            Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private void updatePlayerScore(String player1, String player2) {
+        try {
+            UsersDao.updateScore(player1, DrawScore);
+            UsersDao.updateScore(player2, DrawScore);
+        } catch (SQLException ex) {
+            Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
     void notifyPlayersDraw() {
+        System.out.println("draw from server");
         JSONObject obj = new JSONObject();
         obj.put("command", "draw");
         obj.put("player1", player1.username);
@@ -153,5 +198,20 @@ class GameSession extends Thread {
             }
         }
         return true;
+    }
+
+    // In GameSession.java
+    private void endGame() {
+        try {
+            JSONObject msg = new JSONObject();
+            msg.put("command", "exit_game");
+            isRunning = false;
+            player1.isPlaying = false;
+            player2.isPlaying = false;
+            player1.mouth.writeUTF(msg.toString());
+            player2.mouth.writeUTF(msg.toString());
+        } catch (IOException ex) {
+            Logger.getLogger(GameSession.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }

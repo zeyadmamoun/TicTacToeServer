@@ -12,7 +12,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,13 +27,15 @@ public class ClientHandler extends Thread {
 
     boolean isRunning = true;
     String username;
+    int score;
     private String password;
-    private boolean isPlaying;
+    public boolean isPlaying = false;
     DataInputStream ear;
     DataOutputStream mouth;
     Socket socket;
     private static Vector<ClientHandler> clients = new Vector<>();
     private static ArrayList<String> playersList = new ArrayList<>();
+    private boolean isClientLeft = false;
 
     public ClientHandler(Socket socket) {
         try {
@@ -48,10 +51,15 @@ public class ClientHandler extends Thread {
 
     @Override
     public void run() {
-        while (isRunning) {
+        while (true) {
+            if (isClientLeft) {//by mohamed
+                closingWithClient();
+                break;
+
+            }
             try {
-                String clientMsg = ear.readUTF();
-                if (!isPlaying) {
+                if (!isPlaying && ear.available() > 0) {
+                    String clientMsg = ear.readUTF();
                     parseJsonCommand(clientMsg);
                 }
 //                String clientMsg = ear.readUTF();
@@ -78,6 +86,12 @@ public class ClientHandler extends Thread {
             case "requestToPlay":
                 requestToPlayHandler(jsonMessage);
                 break;
+            case "send_list":
+                updatePlayerListForAll();
+                break;
+            case "send_player_score":
+                updatePlayerScore();
+                break;
             case "playerResponse":
                 int response = jsonMessage.getInt("response");
                 if (response == 1) {
@@ -88,6 +102,22 @@ public class ClientHandler extends Thread {
                 break;
             case "move":
                 System.out.println("test");
+                break;
+            case "closetoleave": //by mohamed
+                playerWantToClose();
+                System.out.println("Client want to leave");
+                break;
+
+            case "I'm_gone": {
+            try {
+                //by mohamed
+                UsersDao.logout(username);
+            } catch (SQLException ex) {
+                Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+                isClientLeft = true;
+                System.out.println("Client left the game");
                 break;
         }
     }
@@ -131,7 +161,6 @@ public class ClientHandler extends Thread {
                 obj.put("username", userName);
                 obj.put("score", score);
                 mouth.writeUTF(obj.toString());
-                updatePlayerListForAll();
             } else {
                 obj.put("command", "login_response");
                 obj.put("status", 0);
@@ -149,18 +178,54 @@ public class ClientHandler extends Thread {
     }
 
     private void updatePlayerListForAll() {
-        playersList.add(this.username);
+        Map<String, Integer> newplayerListMap = new HashMap<>();
+        Map<String, Integer> playerListMap = new HashMap<>();
+        try {
+            playerListMap = UsersDao.getUserScores();
+        } catch (SQLException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
         JSONObject obj = new JSONObject();
         obj.put("command", "players_list");
-        obj.put("list", playersList);
+        playersList.clear();
         try {
             for (int i = 0; i < clients.size(); i++) {
-                //obj.put("list", playersList);
-                clients.get(i).mouth.writeUTF(obj.toString());
+                if (clients.get(i).isPlaying == false) {
+                    //playersList.add(clients.get(i).username);
+                    for (Map.Entry<String, Integer> me : playerListMap.entrySet()) {
+
+                        // Printing keys
+                        if (clients.get(i).username.equals(me.getKey())) {
+                            newplayerListMap.put(me.getKey(), me.getValue());
+                        }
+
+                    }
+                }
+            }
+            obj.put("list", newplayerListMap);
+            for (ClientHandler client : clients) {
+                client.mouth.writeUTF(obj.toString());
             }
         } catch (IOException ex) {
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    private void updatePlayerScore() {
+        try {
+            score = UsersDao.getUserScore(username);
+        } catch (SQLException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        JSONObject obj = new JSONObject();
+        obj.put("command", "players_score");
+        obj.put("score", score);
+        try {
+            mouth.writeUTF(obj.toString());
+        } catch (IOException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
     }
 
     void directMessage(String msg, String username) {
@@ -196,6 +261,7 @@ public class ClientHandler extends Thread {
 
     }
 //accept 
+
     private void playerResponseHandler(JSONObject jsonMessage) {
         ClientHandler player1 = null;
         ClientHandler player2 = null;
@@ -217,15 +283,15 @@ public class ClientHandler extends Thread {
             }
         }
         if (player1 != null && player2 != null) {
-            player1.isRunning = false;
-            player2.isRunning = false;
             player1.isPlaying = true;
             player2.isPlaying = true;
+            updatePlayerListForAll();
             new GameSession(player1, player2);
         }
 
     }
 //reject
+
     private void playerResponsetHandler(JSONObject jsonMessage) {
         String toPlayer = jsonMessage.getString("toplayer");
         for (int i = 0; i < clients.size(); i++) {
@@ -238,5 +304,33 @@ public class ClientHandler extends Thread {
                 }
             }
         }
+    }
+    //closing
+
+    private void playerWantToClose() { //by mohamed
+
+        JSONObject responeToClient = new JSONObject();
+        responeToClient.put("command", "acceptclosing");
+        playersList.remove(this.username);
+        clients.remove(this);
+        updatePlayerListForAll();
+        try {
+            mouth.writeUTF(responeToClient.toString());
+
+        } catch (IOException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
+
+    private void closingWithClient() { //by mohamed
+        try {
+            mouth.close();
+            ear.close();
+            socket.close();
+        } catch (IOException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
     }
 }
