@@ -10,6 +10,7 @@ import java.util.Map;
 import org.apache.derby.jdbc.ClientDriver;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import model.Stats;
 
 public class UsersDao {
 
@@ -276,5 +277,31 @@ public class UsersDao {
             }
             closeResources(conn, ps, rs);
         }
+    }
+
+    public static Stats getChartStats() throws SQLException {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        int onlineNum = 0;
+        int offlineNum = 0;
+
+        conn = getConnection();
+
+        PreparedStatement pst = conn.prepareStatement("SELECT * FROM USERS",
+                ResultSet.TYPE_SCROLL_INSENSITIVE,
+                ResultSet.CONCUR_READ_ONLY);
+
+        rs = pst.executeQuery();
+        while (rs.next()) {
+            if (rs.getBoolean("IS_LOGGED_IN") == true) {
+                onlineNum++;
+            } else {
+                offlineNum++;
+            }
+        }
+        closeResources(conn, ps, rs);
+        return new Stats((onlineNum + offlineNum), onlineNum, offlineNum);
     }
 }

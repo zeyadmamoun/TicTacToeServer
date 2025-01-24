@@ -5,6 +5,7 @@
  */
 package network;
 
+import alphaserver.FXMLDocumentController;
 import database.UsersDao;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -38,6 +39,7 @@ public class ClientHandler extends Thread {
     private static ArrayList<String> playersList = new ArrayList<>();
     private boolean isClientLeft = false;
     public static boolean clientHandlerThread = true;
+    static FXMLDocumentController controller;
 
     public ClientHandler(Socket socket) {
         try {
@@ -52,6 +54,11 @@ public class ClientHandler extends Thread {
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+
+    public static void setController(FXMLDocumentController newController) {
+        controller = newController;
+    }
+
 
     @Override
     public void run() {
@@ -116,6 +123,7 @@ public class ClientHandler extends Thread {
                 try {
                     //by mohamed
                     UsersDao.logout(username);
+                    controller.showPieChart();
                 } catch (SQLException ex) {
                     Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -138,6 +146,7 @@ public class ClientHandler extends Thread {
                 obj.put("username", userName);
                 obj.put("score", 0);
                 mouth.writeUTF(obj.toString());
+                controller.showPieChart();
             } else {
                 obj.put("command", "register_response");
                 obj.put("status", 0);
@@ -165,6 +174,7 @@ public class ClientHandler extends Thread {
                 obj.put("username", userName);
                 obj.put("score", score);
                 mouth.writeUTF(obj.toString());
+                controller.showPieChart();
             } else {
                 obj.put("command", "login_response");
                 obj.put("status", 0);

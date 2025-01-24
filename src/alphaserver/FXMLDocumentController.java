@@ -16,10 +16,16 @@ import java.util.ResourceBundle;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.chart.PieChart;
 import javafx.scene.control.Button;
+import javafx.scene.layout.BorderPane;
+import model.Stats;
 import network.ClientHandler;
 
 /**
@@ -36,6 +42,12 @@ public class FXMLDocumentController implements Initializable {
     private static Vector<ClientHandler> clients = new Vector<>();
     @FXML
     private Button button;
+
+    @FXML
+    private BorderPane borderPane;
+    private PieChart pieChart;
+    private ObservableList<PieChart.Data> pieChartData;
+
     @FXML
     private void handleButtonAction(ActionEvent event) {
         if (!isRunning) {
@@ -50,6 +62,8 @@ public class FXMLDocumentController implements Initializable {
             server.start();
             button.setText("Stop Server");
             isRunning = true;
+            showPieChart();
+
         } else {
             try {
                 serverSocket.close();
@@ -66,11 +80,15 @@ public class FXMLDocumentController implements Initializable {
             server.interrupt();
             server = null;
             button.setText("Start Server");
+            //showPieChart();
+
         }
     }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+
+        ClientHandler.setController(this);
     }
 
     class Server extends Thread {
@@ -85,6 +103,7 @@ public class FXMLDocumentController implements Initializable {
                 Logger.getLogger(FXMLDocumentController.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+
         @Override
         public void run() {
             while (isAcceptingClients) {
@@ -99,4 +118,36 @@ public class FXMLDocumentController implements Initializable {
             }
         }
     }
+
+    public void showPieChart() {
+        try {
+            Stats stats = UsersDao.getChartStats();
+
+            if (pieChart == null) {
+
+                pieChartData = FXCollections.observableArrayList(
+                        new PieChart.Data("Online: " + stats.getOnlinePlayers(), stats.getOnlinePlayers()),
+                        new PieChart.Data("Offline: " + stats.getOfflinePlayers(), stats.getOfflinePlayers())
+                );
+                borderPane.getStylesheets().add(getClass().getResource("PieChartStyle.css").toExternalForm());
+                pieChart = new PieChart(pieChartData);
+                pieChart.setClockwise(true);
+                pieChart.setLabelLineLength(50);
+                pieChart.setLabelsVisible(true);
+                pieChart.setStartAngle(180);
+                borderPane.setCenter(pieChart);
+            } else {
+                Platform.runLater(() -> {
+                    pieChartData.get(0).setPieValue(stats.getOnlinePlayers());
+                    pieChartData.get(1).setPieValue(stats.getOfflinePlayers());
+                    pieChartData.get(0).setName("Online: " + stats.getOnlinePlayers());
+                    pieChartData.get(1).setName("Offline: " + stats.getOfflinePlayers());
+                    pieChart.setTitle("Total Players : " + stats.getTotalPlayers());
+                });
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(FXMLDocumentController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
 }
