@@ -25,6 +25,7 @@ import org.json.JSONObject;
  */
 public class ClientHandler extends Thread {
 
+    public static ClientHandler clientHandler;
     boolean isRunning = true;
     String username;
     int score;
@@ -36,13 +37,16 @@ public class ClientHandler extends Thread {
     private static Vector<ClientHandler> clients = new Vector<>();
     private static ArrayList<String> playersList = new ArrayList<>();
     private boolean isClientLeft = false;
+    public static boolean clientHandlerThread = true;
 
     public ClientHandler(Socket socket) {
         try {
             ear = new DataInputStream(socket.getInputStream());
             mouth = new DataOutputStream(socket.getOutputStream());
             this.socket = socket;
+            System.out.println("clinet is about to added in the list");
             clients.add(this);
+            System.out.println("the player list : " + clients.size());
             start();
         } catch (IOException ex) {
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
@@ -51,7 +55,7 @@ public class ClientHandler extends Thread {
 
     @Override
     public void run() {
-        while (true) {
+        while (clientHandlerThread) {
             if (isClientLeft) {//by mohamed
                 closingWithClient();
                 break;
@@ -109,16 +113,16 @@ public class ClientHandler extends Thread {
                 break;
 
             case "I'm_gone": {
-            try {
-                //by mohamed
-                UsersDao.logout(username);
-            } catch (SQLException ex) {
-                Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+                try {
+                    //by mohamed
+                    UsersDao.logout(username);
+                } catch (SQLException ex) {
+                    Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
-        }
-                isClientLeft = true;
-                System.out.println("Client left the game");
-                break;
+            isClientLeft = true;
+            System.out.println("Client left the game");
+            break;
         }
     }
 
@@ -332,5 +336,31 @@ public class ClientHandler extends Thread {
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
 
+    }
+
+    public void destroy() {
+        try {
+            clientHandlerThread = false;
+
+            if (ear != null) {
+                ear.close();
+            }
+            if (mouth != null) {
+                mouth.close();
+            }
+
+            if (socket != null) {
+                socket.close();
+            }
+
+            clients.remove(this);
+
+            username = null;
+            isPlaying = false;
+
+            interrupt();
+        } catch (IOException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }

@@ -5,12 +5,17 @@
  */
 package alphaserver;
 
+import database.UsersDao;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import network.ClientHandler;
 
 /**
  *
@@ -30,8 +35,12 @@ public class AlphaServer extends Application {
         stage.setScene(scene);
         stage.show();
         stage.setOnCloseRequest(event -> {
-
-            c.isAcceptingClients = false;
+            try {
+                UsersDao.logoutAllUsers();
+            } catch (SQLException ex) {
+                Logger.getLogger(AlphaServer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            //c.isAcceptingClients = false;
             Platform.exit();
             System.exit(0);
         });

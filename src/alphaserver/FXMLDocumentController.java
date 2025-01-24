@@ -5,11 +5,15 @@
  */
 package alphaserver;
 
+import database.UsersDao;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.ResourceBundle;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.event.ActionEvent;
@@ -23,62 +27,76 @@ import network.ClientHandler;
  * @author zeyad_maamoun
  */
 public class FXMLDocumentController implements Initializable {
-    
+
     Server server;
     boolean isRunning = false;
-    boolean isFirstRun = true;
-    boolean isAcceptingClients=true;
+    boolean isAcceptingClients = false;
+    ServerSocket serverSocket;
+    ClientHandler clientHandler;
+    private static Vector<ClientHandler> clients = new Vector<>();
     @FXML
     private Button button;
-    
     @FXML
     private void handleButtonAction(ActionEvent event) {
-        if (isFirstRun == true) {
+        if (!isRunning) {
+            try {
+                UsersDao.logoutAllUsers();
+            } catch (SQLException ex) {
+                Logger.getLogger(FXMLDocumentController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            isAcceptingClients = true;
+            ClientHandler.clientHandlerThread = true;
+            server = new Server();
             server.start();
             button.setText("Stop Server");
-            isFirstRun = false;
             isRunning = true;
-        } else if(isRunning){
-            server.suspend();
-            button.setText("start Server");
+        } else {
+            try {
+                serverSocket.close();
+            } catch (IOException ex) {
+                Logger.getLogger(FXMLDocumentController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            // Stop the server
+            isAcceptingClients = false;
+            ClientHandler.clientHandlerThread = false;
+            for (int i = 0; i < clients.size(); i++) {
+                clients.get(i).destroy();
+            }
             isRunning = false;
-        } else if(isRunning == false){
-            server.resume();
-            button.setText("stop Server");
-            isRunning = true;
+            server.interrupt();
+            server = null;
+            button.setText("Start Server");
         }
-    } 
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        server = new Server();
-    }  
-    
+    }
+
     class Server extends Thread {
-        
-        ServerSocket serverSocket;
-        
+
         public Server() {
             try {
+                if (serverSocket != null) {
+                    serverSocket.close();
+                }
                 serverSocket = new ServerSocket(5005);
             } catch (IOException ex) {
                 Logger.getLogger(FXMLDocumentController.class.getName()).log(Level.SEVERE, null, ex);
-            } 
-        }
-
-        @Override
-        public void run() {
-            while(isAcceptingClients)
-            {     
-                try {
-                    Socket s = serverSocket.accept();
-                    new ClientHandler(s);    //here should i call the registertion method or in the client handler.
-                } catch (IOException ex) {
-                    Logger.getLogger(FXMLDocumentController.class.getName()).log(Level.SEVERE, null, ex);
-                }  
             }
         }
-        
-        
+        @Override
+        public void run() {
+            while (isAcceptingClients) {
+                try {
+                    Socket s = serverSocket.accept();
+                    clients.add(new ClientHandler(s));
+                } catch (SocketException se) {
+                    break;
+                } catch (IOException ex) {
+                    Logger.getLogger(FXMLDocumentController.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
     }
-    
 }
