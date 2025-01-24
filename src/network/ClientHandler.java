@@ -131,6 +131,18 @@ public class ClientHandler extends Thread {
             isClientLeft = true;
             System.out.println("Client left the game");
             break;
+            case "logout_request": {
+                try {
+                    UsersDao.logout(username);
+                    sendLogoutResponse(1);
+                    clients.remove(this);
+                    updatePlayerListForAll();
+                } catch (SQLException ex) {
+//                    Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+                    sendLogoutResponse(0);
+                }
+            }
+            break;
         }
     }
 
@@ -141,6 +153,9 @@ public class ClientHandler extends Thread {
             status = UsersDao.registerUser(userName, password, password);
             if (status == true) {
                 int score = UsersDao.getUserScore(userName);
+                if (!clients.contains(this)) {
+                    clients.add(this);
+                }
                 obj.put("command", "register_response");
                 obj.put("status", 1);
                 obj.put("username", userName);
@@ -169,6 +184,9 @@ public class ClientHandler extends Thread {
 
             if (status == true) {
                 int score = UsersDao.getUserScore(userName);
+                if (!clients.contains(this)) {
+                    clients.add(this);
+                }
                 obj.put("command", "login_response");
                 obj.put("status", 1);
                 obj.put("username", userName);
@@ -346,6 +364,17 @@ public class ClientHandler extends Thread {
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
 
+    }
+    
+    void sendLogoutResponse(int status) {
+        try {
+            JSONObject obj = new JSONObject();
+            obj.put("command", "logout_response");
+            obj.put("status", status);
+            mouth.writeUTF(obj.toString());
+        } catch (IOException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     public void destroy() {
