@@ -80,7 +80,7 @@ public class FXMLDocumentController implements Initializable {
             server.interrupt();
             server = null;
             button.setText("Start Server");
-            //showPieChart();
+            isPieChartHidden();
 
         }
     }
@@ -148,6 +148,16 @@ public class FXMLDocumentController implements Initializable {
         } catch (SQLException ex) {
             Logger.getLogger(FXMLDocumentController.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    private void isPieChartHidden() {
+
+        if (pieChart != null) {
+            Platform.runLater(() -> borderPane.setCenter(null));
+            pieChart = null;
+
+        }
+
     }
 
 }
