@@ -59,11 +59,10 @@ public class ClientHandler extends Thread {
         controller = newController;
     }
 
-
     @Override
     public void run() {
         while (clientHandlerThread) {
-            if (isClientLeft) {//by mohamed
+            if (isClientLeft) {// by mohamed
                 closingWithClient();
                 break;
 
@@ -73,8 +72,6 @@ public class ClientHandler extends Thread {
                     String clientMsg = ear.readUTF();
                     parseJsonCommand(clientMsg);
                 }
-//                String clientMsg = ear.readUTF();
-                // parseJsonCommand(clientMsg);
             } catch (IOException ex) {
                 Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -114,23 +111,23 @@ public class ClientHandler extends Thread {
             case "move":
                 System.out.println("test");
                 break;
-            case "closetoleave": //by mohamed
+            case "closetoleave": // by mohamed
                 playerWantToClose();
                 System.out.println("Client want to leave");
                 break;
 
             case "I'm_gone": {
                 try {
-                    //by mohamed
+                    // by mohamed
                     UsersDao.logout(username);
                     controller.showPieChart();
                 } catch (SQLException ex) {
                     Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-            isClientLeft = true;
-            System.out.println("Client left the game");
-            break;
+                isClientLeft = true;
+                System.out.println("Client left the game");
+                break;
             case "logout_request": {
                 try {
                     UsersDao.logout(username);
@@ -138,11 +135,11 @@ public class ClientHandler extends Thread {
                     clients.remove(this);
                     updatePlayerListForAll();
                 } catch (SQLException ex) {
-//                    Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+                    // Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
                     sendLogoutResponse(0);
                 }
             }
-            break;
+                break;
         }
     }
 
@@ -170,8 +167,10 @@ public class ClientHandler extends Thread {
                 mouth.writeUTF(obj.toString());
             }
         } catch (SQLException ex) {
+            System.out.println("error happen because of the sql");
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
+            System.out.println("error happen because of the Streams");
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -210,34 +209,37 @@ public class ClientHandler extends Thread {
     }
 
     private void updatePlayerListForAll() {
+        // ... existing code ...
         Map<String, Integer> newplayerListMap = new HashMap<>();
         Map<String, Integer> playerListMap = new HashMap<>();
         try {
             playerListMap = UsersDao.getUserScores();
-        } catch (SQLException ex) {
-            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        JSONObject obj = new JSONObject();
-        obj.put("command", "players_list");
-        playersList.clear();
-        try {
-            for (int i = 0; i < clients.size(); i++) {
-                if (clients.get(i).isPlaying == false) {
-                    //playersList.add(clients.get(i).username);
-                    for (Map.Entry<String, Integer> me : playerListMap.entrySet()) {
+            if (playerListMap == null) {
+                playerListMap = new HashMap<>(); // Ensure we have an empty map if query fails
+            }
 
-                        // Printing keys
+            JSONObject obj = new JSONObject();
+            obj.put("command", "players_list");
+            playersList.clear();
+
+            for (int i = 0; i < clients.size(); i++) {
+                if (clients.get(i) != null && clients.get(i).username != null && !clients.get(i).isPlaying) {
+                    for (Map.Entry<String, Integer> me : playerListMap.entrySet()) {
                         if (clients.get(i).username.equals(me.getKey())) {
                             newplayerListMap.put(me.getKey(), me.getValue());
                         }
-
                     }
                 }
             }
+
             obj.put("list", newplayerListMap);
             for (ClientHandler client : clients) {
-                client.mouth.writeUTF(obj.toString());
+                if (client != null && client.mouth != null) {
+                    client.mouth.writeUTF(obj.toString());
+                }
             }
+        } catch (SQLException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -292,7 +294,7 @@ public class ClientHandler extends Thread {
         }
 
     }
-//accept 
+    // accept
 
     private void playerResponseHandler(JSONObject jsonMessage) {
         ClientHandler player1 = null;
@@ -322,7 +324,7 @@ public class ClientHandler extends Thread {
         }
 
     }
-//reject
+    // reject
 
     private void playerResponsetHandler(JSONObject jsonMessage) {
         String toPlayer = jsonMessage.getString("toplayer");
@@ -337,9 +339,9 @@ public class ClientHandler extends Thread {
             }
         }
     }
-    //closing
+    // closing
 
-    private void playerWantToClose() { //by mohamed
+    private void playerWantToClose() { // by mohamed
 
         JSONObject responeToClient = new JSONObject();
         responeToClient.put("command", "acceptclosing");
@@ -355,7 +357,7 @@ public class ClientHandler extends Thread {
 
     }
 
-    private void closingWithClient() { //by mohamed
+    private void closingWithClient() { // by mohamed
         try {
             mouth.close();
             ear.close();
@@ -365,7 +367,7 @@ public class ClientHandler extends Thread {
         }
 
     }
-    
+
     void sendLogoutResponse(int status) {
         try {
             JSONObject obj = new JSONObject();

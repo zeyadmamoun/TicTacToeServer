@@ -72,7 +72,7 @@ public class UsersDao {
         }
     }
 
-    public static boolean registerUser(String userName, String password, String confirmPassword) throws SQLException {
+    synchronized public static boolean registerUser(String userName, String password, String confirmPassword) throws SQLException {
         if (!password.equals(confirmPassword)) {
             return false;
         }
@@ -94,7 +94,7 @@ public class UsersDao {
         }
     }
 
-    public static boolean login(String userName, String password) throws SQLException {
+    synchronized public static boolean login(String userName, String password) throws SQLException {
         Connection conn = null;
         PreparedStatement checkLoginPs = null;
         PreparedStatement loginPs = null;
@@ -176,15 +176,28 @@ public class UsersDao {
         PreparedStatement ps = null;
         ResultSet rs = null;
         Map<String, Integer> map = new HashMap<>();
+
         try {
             conn = getConnection();
-            ps = conn.prepareStatement("SELECT USERNAME , SCORE FROM USERS");
+            if (conn == null) {
+                LOGGER.severe("Failed to establish database connection");
+                return map; // Return empty map instead of null
+            }
+
+            ps = conn.prepareStatement("SELECT USERNAME, SCORE FROM USERS WHERE IS_LOGGED_IN = TRUE");
             rs = ps.executeQuery();
-            while (rs.next()) {
-                //System.out.println(rs.getInt("SCORE"));
-                map.put(rs.getString("USERNAME"), rs.getInt("SCORE"));
+
+            while (rs != null && rs.next()) {
+                String username = rs.getString("USERNAME");
+                int score = rs.getInt("SCORE");
+                if (username != null) {
+                    map.put(username, score);
+                }
             }
             return map;
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error retrieving user scores", e);
+            throw e;
         } finally {
             closeResources(conn, ps, rs);
         }
