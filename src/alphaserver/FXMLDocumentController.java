@@ -135,14 +135,14 @@ public class FXMLDocumentController implements Initializable {
                 pieChart.setLabelLineLength(50);
                 pieChart.setLabelsVisible(true);
                 pieChart.setStartAngle(180);
+                pieChart.setTitle("Total Players : " + stats.getTotalPlayers());
                 borderPane.setCenter(pieChart);
             } else {
                 Platform.runLater(() -> {
                     pieChartData.get(0).setPieValue(stats.getOnlinePlayers());
                     pieChartData.get(1).setPieValue(stats.getOfflinePlayers());
                     pieChartData.get(0).setName("Online: " + stats.getOnlinePlayers());
-                    pieChartData.get(1).setName("Offline: " + stats.getOfflinePlayers());
-                    pieChart.setTitle("Total Players : " + stats.getTotalPlayers());
+                    pieChartData.get(1).setName("Offline: " + stats.getOfflinePlayers());                   
                 });
             }
         } catch (SQLException ex) {
