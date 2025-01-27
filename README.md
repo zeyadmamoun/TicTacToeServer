@@ -91,7 +91,8 @@ The database tracks user credentials, scores, and login status for gameplay and 
 
 ## Prerequisites  
 - Java installed on your machine.  
-- IDE (NetBeans).  
+- IDE (NetBeans).
+- Derby Database Driver.
 - Stable network setup for multiplayer functionality.  
 
 ---
