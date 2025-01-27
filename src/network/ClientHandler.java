@@ -59,21 +59,27 @@ public class ClientHandler extends Thread {
         controller = newController;
     }
 
-    @Override
     public void run() {
         while (clientHandlerThread) {
-            if (isClientLeft) {// by mohamed
+            if (isClientLeft) {
                 closingWithClient();
                 break;
-
             }
             try {
                 if (!isPlaying && ear.available() > 0) {
                     String clientMsg = ear.readUTF();
                     parseJsonCommand(clientMsg);
+                } else {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
             } catch (IOException ex) {
-                Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, "Error reading from client", ex);
+                break;
             }
         }
     }
@@ -125,9 +131,9 @@ public class ClientHandler extends Thread {
                     Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-                isClientLeft = true;
-                System.out.println("Client left the game");
-                break;
+            isClientLeft = true;
+            System.out.println("Client left the game");
+            break;
             case "logout_request": {
                 try {
                     UsersDao.logout(username);
@@ -139,7 +145,7 @@ public class ClientHandler extends Thread {
                     sendLogoutResponse(0);
                 }
             }
-                break;
+            break;
         }
     }
 
