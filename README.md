@@ -53,6 +53,32 @@ Welcome to **TicTacToeServer**! This project implements a network-based Tic-Tac-
 
 ---
 
+## Database Structure 
+
+The project uses a database to manage user information and gameplay data. Below is the structure of the primary table:
+
+### Table: Users  
+| Column Name   | Data Type  | Description                                        |
+|---------------|------------|--------------------------------------------------- |
+| **USERNAME**  | String     | unique username of the player (Primary Key).       |
+| **PASSWORD**  | String     | The password associated with the user account.     |
+| **SCORE**     | Integer    | The player's current score.                        |
+| **IS_LOGGED_IN** | Boolean | Indicates whether the user is currently logged in. |
+
+### Sample Data:
+| USERNAME      | PASSWORD | SCORE | IS_LOGGED_IN |
+|---------------|----------|-------|--------------|
+| zeyad         | 123      | 345   | false        |
+| motaz         | 1234     | 120   | false        |
+| ali           | 12       | 185   | false        |
+| ahmed         | 123      | 20    | false        |
+| zaki          | 123      | 200   | false        |
+| ...           | ...      | ...   | ...          |
+
+The database tracks user credentials, scores, and login status for gameplay and server management purposes.
+
+---
+
 ## Contributors  
 
 - **[Zeyad Maamoun](https://github.com/zeyadmamoun)**
